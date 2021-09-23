@@ -3,6 +3,9 @@
 const http = require('http');
 const net = require('net');
 const url = require('url');
+const fs = require('fs');
+const path = require('path');
+const querystring = require('querystring');
 
 const configFile = 'config.json';
 
