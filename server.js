@@ -11,7 +11,8 @@ const configFile = 'config.json';
 
 var config = {};
 var defaultConfigs = {
-	httpPort:80 //https://stackoverflow.com/a/23281401
+	httpPort:80, //https://stackoverflow.com/a/23281401
+	webRoot:'webroot/'
 };
 
 showBanner();
@@ -69,15 +70,67 @@ function initHttpServer(){
 	})
 }
 
+// maps file extention to MIME types
+const mimeType = {
+	'.ico': 'image/x-icon',
+	'.html': 'text/html',
+	'.js': 'text/javascript',
+	'.json': 'application/json',
+	'.css': 'text/css',
+	'.png': 'image/png',
+	'.jpg': 'image/jpeg',
+	'.wav': 'audio/wav',
+	'.mp3': 'audio/mpeg',
+	'.svg': 'image/svg+xml',
+	'.pdf': 'application/pdf',
+	'.doc': 'application/msword',
+	'.eot': 'appliaction/vnd.ms-fontobject',
+	'.ttf': 'aplication/font-sfnt'
+};
+
 const httpServer = http.createServer(function(request, response) {
 
-	let pathname = url.parse(request.url).pathname;
-  switch(pathname){
-		case '/create': dynamoCreate(request, response); 	break;
-		case '/read': dynamoRead(request, response); break;
-		case '/update': dynamoUpdate(request, response); break;
-		case '/delete': dynamoDelete(request, response);	break;
-  }
+	const parsedUrl = url.parse(request.url);
+	
+	switch(parsedUrl.pathname){
+		case '/create': dynamoCreate(request, response); return;
+		case '/read': dynamoRead(request, response); return;
+		case '/update': dynamoUpdate(request, response); return;
+		case '/delete': dynamoDelete(request, response); return;
+	}
+
+	const sanitizePath = path.normalize(parsedUrl.pathname).replace(/^(\.\.[\/\\])+/, '');
+	let pathname = path.join(__dirname, config.webRoot, sanitizePath);
+
+	fs.exists(pathname, function (exist) {
+		if (!exist) {
+			// if the file is not found, return 404
+			log('404 not found!');
+			response.statusCode = 404;
+			response.end(`File ${pathname} not found!`);
+			return;
+		}
+
+		// if is a directory, then look for index.html
+		if (fs.statSync(pathname).isDirectory()) {
+			pathname += '/index.html';
+		}
+
+		// read file from file system
+		fs.readFile(pathname, function (err, data) {
+			if (err) {
+				log('500 file exists but cant read!');
+				response.statusCode = 500;
+				response.end(`Error getting the file: ${err}.`);
+			} else {
+				// based on the URL path, extract the file extention. e.g. .js, .doc, ...
+				const ext = path.parse(pathname).ext;
+				// if the file is found, set Content-type and send data
+				response.setHeader('Content-type', mimeType[ext] || 'text/plain');
+				response.end(data);
+			}
+		});
+	});
 })
 
 function dynamoCreate(request, response){
