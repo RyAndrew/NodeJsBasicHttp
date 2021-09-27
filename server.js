@@ -11,7 +11,7 @@ const configFile = 'config.json';
 
 var config = {};
 var defaultConfigs = {
-	httpPort:80, //https://stackoverflow.com/a/23281401
+	httpPort:8888, //https://stackoverflow.com/a/23281401
 	webRoot:'webroot/'
 };
 
@@ -64,11 +64,6 @@ function configRead(){
 }
 
 function initHttpServer(){
-	httpServer.listen(config.httpPort).on('error',function(){
-		console.error(`Fatal Error! Failed to listen on port ${config.httpPort}. Is something else using it?`);
-		process.exit(1);
-	})
-}
 
 // maps file extention to MIME types
 const mimeType = {
@@ -132,6 +127,12 @@ const httpServer = http.createServer(function(request, response) {
 		});
 	});
 })
+
+	httpServer.listen(config.httpPort).on('error',function(){
+		console.error(`Fatal Error! Failed to listen on port ${config.httpPort}. Is something else using it?`);
+		process.exit(1);
+	})
+}
 
 function dynamoCreate(request, response){
 
