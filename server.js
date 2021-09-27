@@ -45,8 +45,9 @@ function configRead(){
 		log(`read configs from ${configFile} - Error! Unable to read file! Check permissions! Defaults loaded`);
 		return;
 	}
+	let configFileJson;
 	try{
-		config=JSON.parse(configFileData);
+		configFileJson=JSON.parse(configFileData);
 	}catch(e){
 		config=defaultConfigs;
 		log(`read configs from ${configFile} - Error! File contains invalid json! Defaults loaded`);
@@ -54,13 +55,18 @@ function configRead(){
 		return;
 	}
 
-	if(!config.hasOwnProperty('httpPort')){
+	if(!configFileJson.hasOwnProperty('httpPort')){
 		config=defaultConfigs;
 		log(`read configs from ${configFile} - Error! Config missing httpPort, assuming bad! Defaults loaded`);
 		console.log(`--------\r\nBad Config:${configFileData}\r\n--------`);
 	}else{
 		log(`read configs from ${configFile}`);
 	}
+
+	config = {
+		...defaultConfigs,
+		...configFileJson
+	};
 }
 
 function initHttpServer(){
